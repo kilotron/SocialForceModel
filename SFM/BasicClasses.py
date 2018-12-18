@@ -1,6 +1,7 @@
 import random
 import math
 from SFM.PathFinder import AStarPathFinder
+import pickle
 
 """
     为了简化，我们对每个行人的参数A(N), B(m), desired_speed(m/s), mass(kg)取相同的值。
@@ -195,11 +196,11 @@ class Scene:
         dests: 目标位置们，Box类型的列表，可以包含在boxes中
         peds: 行人们，Circle类型，可以是一个列表
     """
-    def __init__(self):
+    def __init__(self, dests=None, peds=None, boxes=None):
         # 修改这个方法来初始化场景
-        self.dests = None
-        self.peds = None
-        self.boxes = None
+        self.dests = dests
+        self.peds = peds
+        self.boxes = boxes
 
     def load(self, path):
         """ 从文件中加载场景
@@ -207,16 +208,27 @@ class Scene:
         :return:
         """
 
+        with open(path, "rb") as f:
+            read_data = pickle.load(f)
+            self.dests = read_data.dests
+            self.peds = read_data.peds
+            self.boxes = read_data.boxes
+
     def update(self):
         """ 推进一个时间步长，更新行人们的位置
         :return:
         """
+        for ped in self.peds:
+            ped.pos.x += 2
+            ped.pos.y += 2
 
     def save(self, path):
         """ 保存场景到路径path
         :param path:
         :return:
         """
+        with open(path, "wb") as f:
+            pickle.dump(self, f)
 
 
 
