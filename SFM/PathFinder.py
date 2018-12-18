@@ -2,7 +2,7 @@
 from SFM.BasicClasses import *
 
 
-class AStartPathFinder:
+class AStarPathFinder:
     """
     在这里完成A*算法
     """

@@ -1,5 +1,6 @@
 import random
 import math
+from SFM.PathFinder import AStarPathFinder
 
 """
     为了简化，我们对每个行人的参数A(N), B(m), desired_speed(m/s), mass(kg)取相同的值。
@@ -13,7 +14,8 @@ param = {
     'mass': 80.0,
     'r_upper': 0.35,
     'r_lower': 0.25,
-    'ch_time': 0.5
+    'ch_time': 0.5,
+    'time_step': 0.005
 }
 
 
@@ -39,6 +41,12 @@ class Vector2D:
         else:
             return NotImplemented
 
+    def __truediv__(self, scalar):
+        if isinstance(scalar, (int, float)):
+            return Vector2D(self.x / scalar, self.y / scalar)
+        else:
+            return NotImplemented
+
     def norm(self):
         return math.sqrt(self.x ** 2, self.y ** 2)
 
@@ -51,25 +59,42 @@ class Circle:
     Attributes:
         pos: 位置向量
         vel: 当前速度
+        next_pos: 下一个位置
+        next_vel: 下一时刻速度
         mass: 质量
         radius: 圆的半径，或人肩宽的一半
     """
 
-    def __init__(self, x, y, vx, vy, mass):
+    def __init__(self, x, y, vx, vy, mass, scene):
         self.pos = Vector2D(x, y)
         self.vel = Vector2D(vx, vy)
+        self.next_pos = self.pos
+        self.next_vel = self.vel
         self.radius = random.uniform(param['r_lower'], param['r_upper'])
         self.mass = mass
+        self.scene = scene
 
     def distance_to(self, other):
         """ 计算与参数other的距离
         根据other的类型（Circle，或墙或障碍物）分别计算
-        :param other:
-        :return:
+        :return: 距离向量
         """
-        return 0.0
+        if isinstance(other, Circle):
+            return other.pos - self.pos
+        # else other is instance of Box
+        center = other.center()
+        dx = max(abs(self.pos.x - center.x) - other.width() / 2, 0)
+        dy = max(abs(self.pos.y - center.y) - other.height() / 2, 0)
+        if dx > 0 and dy > 0:
+            n = center - self.pos
+        elif dx > 0 and dy == 0:
+            n = Vector2D(self.pos.x - center.x, 0)
+        else:   # dx == 0 and dy > 0
+            n = Vector2D(0, self.pos.y - center.y)
+        n = n / n.norm()
+        return math.sqrt(dx^2, dy^2) * n
 
-    def ped_repulsive_force(self, others):
+    def ped_repulsive_force(self):
         """ 计算行人与其他行人间的排斥力
 
         使用公式:
@@ -79,12 +104,20 @@ class Circle:
             d_ij = ||r_i - r_j|| 圆心距离
             n_ij = (r_i - r_j) / d_ij 单位方向向量
 
-        :param others: 其他的行人，是一个Circle的列表
         :return: 其他行人们对此人的合力f_i
         """
-        return Vector2D(0, 0)
+        others = list(self.scene.peds)
+        others.remove(self)
+        force = Vector2D(0.0, 0.0)
+        for other in others:
+            d_vec = self.distance_to(other)
+            d = d_vec.norm()
+            n = d_vec / d   # n is a unit vector
+            radius_sum = self.radius + other.radius
+            force += param['A'] * math.exp((radius_sum - d) / param['B']) * n
+        return force
 
-    def wall_repulsive_force(self, scene):
+    def wall_repulsive_force(self):
         """ 计算与障碍物或墙的排斥力
 
         使用公式:
@@ -92,10 +125,14 @@ class Circle:
             f_iW = A * e^((ri-diW)/B) * niW
         注意niW是一个向量,niW的方向是由墙指向行人
 
-        :param scene: 场景，包括障碍物和墙
         :return: 所有墙和障碍物对此人的合力
         """
-        return Vector2D(0, 0)
+        force = Vector2D(0.0, 0.0)
+        for box in self.scene.boxes:
+            d_vec = self.distance_to(box)
+            n = d_vec / d_vec.norm()    # n is a vector
+            force += param['A'] * math.exp((self.radius - d_vec.norm()) / param['B']) * n
+        return force
 
     def desired_force(self):
         """ 计算期望力
@@ -105,29 +142,30 @@ class Circle:
             vc是当前速度，t_c是特征时间
         :return: 期望力
         """
-        return Vector2D(0, 0)
+        e = AStarPathFinder.get_direction(self.scene, self)
+        return (param['desired_speed'] * e - self.vel) / param['ch_time'] * self.mass
 
-    def get_force(self, scene):
-        """ 计算合力
-        :param
-        :return: 合力
-        """
-        return Vector2D(0, 0)
+    def get_force(self):
+        """ 计算合力"""
+        return self.ped_repulsive_force() + self.wall_repulsive_force() + self.desired_force()
 
     def accleration(self):
-        """
-        调用get_force()得到合力，根据合力和质量计算加速度
+        """ 根据合力和质量计算加速度
         :return: 加速度
         """
-        return Vector2D(0, 0)
+        return self.get_force() / self.mass
+
+    def compute_next(self):
+        self.next_pos = self.pos + self.vel * param['time_step']
+        self.next_vel = self.vel + self.accleration() * param['time_step']
 
     def update_status(self):
-        """
-        调用上面计算加速度的函数获得加速度，更新此人的位置和速度
+        """ 更新此人的位置和速度
+        Pre-conditions: 首先调用compute_next()
         注意所有的行人应该同时更新位置和速度
-        :return:
         """
-        return None
+        self.pos = self.next_vel
+        self.vel = self.next_vel
 
 
 class Box:
@@ -140,6 +178,15 @@ class Box:
     def __init__(self, x1, y1, x2, y2):
         self.p1 = Vector2D(x1, y1)
         self.p2 = Vector2D(x2, y2)
+
+    def center(self):
+        return (self.p1 + self.p2) / 2
+
+    def width(self):
+        return math.fabs(self.p2.x - self.p1.x) / 2
+
+    def height(self):
+        return math.fabs(self.p2.y - self.p1.y) / 2
 
 class Scene:
     """ Scene是一个场景，包括静态的墙、障碍物和动态的行人
