@@ -83,7 +83,7 @@ class Circle:
         radius: 圆的半径，或人肩宽的一半
     """
 
-    def __init__(self, x, y, vx, vy, mass, scene):
+    def __init__(self, x, y, vx, vy, mass, scene=None):
         self.pos = Vector2D(x, y)
         self.vel = Vector2D(vx, vy)
         self.next_pos = self.pos
@@ -176,7 +176,8 @@ class Circle:
         """
         return self.get_force() / self.mass
 
-    def compute_next(self):
+    def compute_next(self, scene):
+        self.scene = scene
         self.next_pos = self.pos + self.vel * param['time_step']
         self.next_vel = self.vel + self.accleration() * param['time_step']
 
@@ -238,7 +239,7 @@ class Scene:
             ped.pos.x += 2
             ped.pos.y += 2"""
         for ped in self.peds:
-            ped.compute_next()
+            ped.compute_next(scene=self)
         for ped in self.peds:
             ped.update_status()
 
