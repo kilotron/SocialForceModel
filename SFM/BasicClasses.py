@@ -1,5 +1,6 @@
 import random
 import math
+import numpy as np
 from SFM.PathFinder import AStarPathFinder
 import pickle
 
@@ -19,6 +20,7 @@ param = {
     'time_step': 0.005
 }
 
+scale_factor = 10
 
 class Vector2D:
     """ 二维向量，表示力、速度、位置或者方向。
@@ -42,6 +44,9 @@ class Vector2D:
         else:
             return NotImplemented
 
+    def __rmul__(self, scalar):
+        return self * scalar
+
     def __truediv__(self, scalar):
         if isinstance(scalar, (int, float)):
             return Vector2D(self.x / scalar, self.y / scalar)
@@ -49,10 +54,22 @@ class Vector2D:
             return NotImplemented
 
     def norm(self):
-        return math.sqrt(self.x ** 2, self.y ** 2)
+        return math.sqrt(self.x ** 2 + self.y ** 2)
 
     def __str__(self):
-        return 'Vector2D(%.2f, %.2f)' % (self.x, self.y);
+        return 'Vector2D(%.2f, %.2f)' % (self.x, self.y)
+
+    def get_x(self):
+        return int(self.x * scale_factor)
+
+    def get_y(self):
+        return int(self.y * scale_factor)
+
+    def set_x(self, x):
+        self.x = x / scale_factor
+
+    def set_y(self, y):
+        self.y = y / scale_factor
 
 
 class Circle:
@@ -75,25 +92,28 @@ class Circle:
         self.mass = mass
         self.scene = scene
 
+    def get_radius(self):
+        return self.radius * scale_factor
+
     def distance_to(self, other):
         """ 计算与参数other的距离
         根据other的类型（Circle，或墙或障碍物）分别计算
         :return: 距离向量
         """
         if isinstance(other, Circle):
-            return other.pos - self.pos
+            return self.pos - other.pos
         # else other is instance of Box
         center = other.center()
         dx = max(abs(self.pos.x - center.x) - other.width() / 2, 0)
         dy = max(abs(self.pos.y - center.y) - other.height() / 2, 0)
         if dx > 0 and dy > 0:
-            n = center - self.pos
+            n = Vector2D(np.sign(self.pos.x - center.x) * dx, np.sign(self.pos.y - center.y) * dy)
         elif dx > 0 and dy == 0:
             n = Vector2D(self.pos.x - center.x, 0)
         else:   # dx == 0 and dy > 0
             n = Vector2D(0, self.pos.y - center.y)
         n = n / n.norm()
-        return math.sqrt(dx^2, dy^2) * n
+        return math.sqrt(dx ** 2 + dy ** 2) * n
 
     def ped_repulsive_force(self):
         """ 计算行人与其他行人间的排斥力
@@ -184,10 +204,10 @@ class Box:
         return (self.p1 + self.p2) / 2
 
     def width(self):
-        return math.fabs(self.p2.x - self.p1.x) / 2
+        return math.fabs(self.p2.x - self.p1.x)
 
     def height(self):
-        return math.fabs(self.p2.y - self.p1.y) / 2
+        return math.fabs(self.p2.y - self.p1.y)
 
 class Scene:
     """ Scene是一个场景，包括静态的墙、障碍物和动态的行人
@@ -197,7 +217,6 @@ class Scene:
         peds: 行人们，Circle类型，可以是一个列表
     """
     def __init__(self, dests=None, peds=None, boxes=None):
-        # 修改这个方法来初始化场景
         self.dests = dests
         self.peds = peds
         self.boxes = boxes
@@ -205,9 +224,7 @@ class Scene:
     def load(self, path):
         """ 从文件中加载场景
         :param path: 文件路径
-        :return:
         """
-
         with open(path, "rb") as f:
             read_data = pickle.load(f)
             self.dests = read_data.dests
@@ -215,18 +232,18 @@ class Scene:
             self.boxes = read_data.boxes
 
     def update(self):
-        """ 推进一个时间步长，更新行人们的位置
-        :return:
+        """ 推进一个时间步长，更新行人们的位置"""
         """
         for ped in self.peds:
             ped.pos.x += 2
-            ped.pos.y += 2
+            ped.pos.y += 2"""
+        for ped in self.peds:
+            ped.compute_next()
+        for ped in self.peds:
+            ped.update_status()
 
     def save(self, path):
-        """ 保存场景到路径path
-        :param path:
-        :return:
-        """
+        """ 保存场景到路径path"""
         with open(path, "wb") as f:
             pickle.dump(self, f)
 
