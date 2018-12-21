@@ -1,5 +1,5 @@
 # 路径寻找算法
-from SFM.BasicClasses import *
+import SFM.BasicClasses
 
 
 class AStarPathFinder:
@@ -16,4 +16,4 @@ class AStarPathFinder:
         :return: 返回期望方向e，类型为Vector2D，要求e是单位向量e.x^2 + e.y^2 = 1
         """
 
-        return Vector2D(0, 0)
+        return SFM.BasicClasses.Vector2D(0, 0)

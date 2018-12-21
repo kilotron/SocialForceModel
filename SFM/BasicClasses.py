@@ -20,7 +20,8 @@ param = {
     'time_step': 0.005
 }
 
-scale_factor = 10
+scale_factor = 100
+
 
 class Vector2D:
     """ 二维向量，表示力、速度、位置或者方向。
@@ -186,7 +187,7 @@ class Circle:
         Pre-conditions: 首先调用compute_next()
         注意所有的行人应该同时更新位置和速度
         """
-        self.pos = self.next_vel
+        self.pos = self.next_pos
         self.vel = self.next_vel
 
 
