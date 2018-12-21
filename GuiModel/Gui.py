@@ -2,6 +2,8 @@ import math
 import time
 import threading
 import copy
+import ctypes
+import inspect
 
 import tkinter
 
@@ -15,6 +17,25 @@ MAX_COLOR = 50
 CANVAS_BG = "white"
 default_path = "D://save.p"
 TIME_STEP = 0.005
+
+
+def _async_raise(tid, exctype):
+    """raises the exception, performs cleanup if needed"""
+    tid = ctypes.c_long(tid)
+    if not inspect.isclass(exctype):
+        exctype = type(exctype)
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+    if res == 0:
+        raise ValueError("invalid thread id")
+    elif res != 1:
+        # """if it returns a number greater than one, you're in trouble,
+        # and you should call it again with exc=NULL to revert the effect"""
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
+
+
+def stop_thread(thread):
+    _async_raise(thread.ident, SystemExit)
 
 
 class SfmGui:
@@ -43,6 +64,7 @@ class SfmGui:
         self.frame.pack(side=tkinter.RIGHT)
         self.the_path = tkinter.Entry(self.frame, width=30)
         self.bind_btn()
+        self.th = None
 
     def begin_simulate(self):
         for i in range(self.epoch):
@@ -65,9 +87,9 @@ class SfmGui:
             self.pre_peds = copy.deepcopy(self.peds)
 
     def begin_simulate_btn(self, event):
-        th = threading.Thread(target=self.begin_simulate, args=())
-        th.setDaemon(True)
-        th.start()
+        self.th = threading.Thread(target=self.begin_simulate, args=())
+        self.th.setDaemon(True)
+        self.th.start()
 
     def color_list_init(self, num):
         n = int(256 / int(math.pow(num, 1 / 3) + 1))
@@ -132,6 +154,8 @@ class SfmGui:
 
     def reset_scene(self, event):
         # 重置场景
+        if self.th and self.th.isAlive():
+            stop_thread(self.th)
         scene = copy.deepcopy(self.default_scene)
         self.change_scene(scene)
 
@@ -165,6 +189,8 @@ class SfmGui:
 
     def load(self, event, path):
         # 读取场景
+        if self.th and self.th.isAlive():
+            stop_thread(self.th)
         input_path = self.the_path.get()
         scene = BasicClasses.Scene()
         # print(input_path)
