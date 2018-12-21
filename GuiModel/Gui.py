@@ -14,12 +14,7 @@ MAX_Y = 500
 MAX_COLOR = 50
 CANVAS_BG = "white"
 default_path = "D://save.p"
-
-
-'''
-def transform_coordinate(x, y):
-    return [x, y]
-'''
+TIME_STEP = 0.005
 
 
 class SfmGui:
@@ -51,7 +46,7 @@ class SfmGui:
 
     def begin_simulate(self):
         for i in range(self.epoch):
-            time.sleep(0.5)
+            time.sleep(TIME_STEP)
             self.scene.update()
             # print(gui.scene.peds)
             i = 0
