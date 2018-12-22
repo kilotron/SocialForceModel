@@ -16,7 +16,7 @@ MAX_Y = 500
 MAX_COLOR = 50
 CANVAS_BG = "white"
 default_path = "D://save.p"
-TIME_STEP = 0.005
+TIME_STEP = BasicClasses.get_time_step()
 
 
 def _async_raise(tid, exctype):

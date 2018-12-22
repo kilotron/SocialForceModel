@@ -17,11 +17,18 @@ param = {
     'r_upper': 0.35,
     'r_lower': 0.25,
     'ch_time': 0.5,
-    'time_step': 0.005
+    'time_step': 0.01
 }
 
-scale_factor = 100
+scale_factor = 60
+path_finder_test = False
 
+def get_time_step():
+    return param['time_step']
+
+def pf_test():
+    global path_finder_test
+    path_finder_test = True
 
 class Vector2D:
     """ 二维向量，表示力、速度、位置或者方向。
@@ -113,8 +120,13 @@ class Circle:
             n = Vector2D(self.pos.x - center.x, 0)
         else:   # dx == 0 and dy > 0
             n = Vector2D(0, self.pos.y - center.y)
-        n = n / n.norm()
+        if n.norm() > 0:
+            n = n / n.norm()
         return math.sqrt(dx ** 2 + dy ** 2) * n
+
+    def is_intersect(self, other):
+        """other is instance of Box"""
+        return self.distance_to(other).norm() < self.radius
 
     def ped_repulsive_force(self):
         """ 计算行人与其他行人间的排斥力
@@ -152,6 +164,9 @@ class Circle:
         force = Vector2D(0.0, 0.0)
         for box in self.scene.boxes:
             d_vec = self.distance_to(box)
+            if d_vec.norm() == 0:
+                print("撞墙了")
+                continue
             n = d_vec / d_vec.norm()    # n is a vector
             force += param['A'] * math.exp((self.radius - d_vec.norm()) / param['B']) * n
         return force
@@ -164,12 +179,24 @@ class Circle:
             vc是当前速度，t_c是特征时间
         :return: 期望力
         """
-        e = AStarPathFinder.get_direction(self.scene, self)
+        pf = AStarPathFinder()
+        e = pf.get_direction(self.scene, self)
+        print("desired_dir:"+str(e))
         return (param['desired_speed'] * e - self.vel) / param['ch_time'] * self.mass
 
     def get_force(self):
         """ 计算合力"""
-        return self.ped_repulsive_force() + self.wall_repulsive_force() + self.desired_force()
+        f1 = self.ped_repulsive_force()
+        f2 = self.wall_repulsive_force()
+        f3 = self.desired_force()
+        print("\nped:" + str(f1))
+        print("wall:" + str(f2))
+        print("desired:" + str(f3))
+        print("合力:"+str(f1+f2+f3))
+        if path_finder_test:
+            return f3
+        return f1 + f2 + f3
+
 
     def accleration(self):
         """ 根据合力和质量计算加速度
@@ -180,7 +207,11 @@ class Circle:
     def compute_next(self, scene):
         self.scene = scene
         self.next_pos = self.pos + self.vel * param['time_step']
-        self.next_vel = self.vel + self.accleration() * param['time_step']
+        acc = self.accleration()
+        self.next_vel = self.vel + acc * param['time_step']
+        print("vel:"+str(self.vel))
+        print("acc" + str(acc))
+        print("pos:"+str(self.pos))
 
     def update_status(self):
         """ 更新此人的位置和速度
@@ -202,6 +233,17 @@ class Box:
         self.p1 = Vector2D(x1, y1)
         self.p2 = Vector2D(x2, y2)
 
+    def scale(self, factor):
+        self.p1 = self.p1 * factor
+        self.p2 = self.p2 * factor
+
+    def is_intersect(self, other):
+        """other is of instance Box"""
+        return self.p2.x > other.p1.x and self.p1.x < other.p2.x and self.p2.y > other.p1.y and self.p1.y < other.p2.y
+
+    def is_in(self, pos):
+        return self.p1.x <= pos.x < self.p2.x and self.p1.y <= pos.y <= self.p2.y
+
     def center(self):
         return (self.p1 + self.p2) / 2
 
@@ -219,6 +261,7 @@ class Scene:
         peds: 行人们，Circle类型，可以是一个列表
     """
     def __init__(self, dests=None, peds=None, boxes=None):
+        self.border = None
         self.dests = dests
         self.peds = peds
         self.boxes = boxes
@@ -232,6 +275,7 @@ class Scene:
             self.dests = read_data.dests
             self.peds = read_data.peds
             self.boxes = read_data.boxes
+            self.border = read_data.border
 
     def update(self):
         """ 推进一个时间步长，更新行人们的位置"""
