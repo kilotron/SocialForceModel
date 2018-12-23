@@ -8,7 +8,7 @@ import inspect
 import tkinter
 
 from SFM import BasicClasses
-from SFM.BasicClasses import scale_factor
+#from SFM.BasicClasses import scale_factor
 
 
 MAX_X = 500
@@ -76,7 +76,8 @@ class SfmGui:
                 x = ped[0].pos.get_x()
                 y = ped[0].pos.get_y()
                 # print(x, y)
-                r = ped[0].radius * scale_factor
+                r = ped[0].get_radius()
+                #r = ped[0].radius * scale_factor
                 self.canvas.coords(ped[1], (x - r, y - r, x + r, y + r))
                 if self.pre_peds:
                     pre_x = self.pre_peds[i][0].pos.get_x()
@@ -265,7 +266,8 @@ class SfmGui:
 
         x = ped[0].pos.get_x()
         y = ped[0].pos.get_y()
-        r = ped[0].radius * scale_factor
+        r = ped[0].get_radius()
+       # r = ped[0].radius * scale_factor
         ped[1] = self.canvas.create_oval((x - r, y - r, x + r, y + r), fill=fill)
 
     def add_dest(self, dest, fill="black"):

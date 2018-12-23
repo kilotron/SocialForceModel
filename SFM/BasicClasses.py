@@ -1,7 +1,7 @@
 import random
 import math
 import numpy as np
-from SFM.PathFinder import AStarPathFinder
+import SFM.PathFinder
 import pickle
 
 """
@@ -12,15 +12,15 @@ import pickle
 param = {
     'A': 2000.0,
     'B': 0.08,
-    'desired_speed': 1.0,
+    'desired_speed': 2.0,
     'mass': 80.0,
     'r_upper': 0.35,
     'r_lower': 0.25,
     'ch_time': 0.5,
-    'time_step': 0.01
+    'time_step': 0.02
 }
 
-scale_factor = 60
+
 path_finder_test = False
 
 def get_time_step():
@@ -68,16 +68,16 @@ class Vector2D:
         return 'Vector2D(%.2f, %.2f)' % (self.x, self.y)
 
     def get_x(self):
-        return int(self.x * scale_factor)
+        return int(self.x * Scene.scale_factor)
 
     def get_y(self):
-        return int(self.y * scale_factor)
+        return int(self.y * Scene.scale_factor)
 
     def set_x(self, x):
-        self.x = x / scale_factor
+        self.x = x / Scene.scale_factor
 
     def set_y(self, y):
-        self.y = y / scale_factor
+        self.y = y / Scene.scale_factor
 
 
 class Circle:
@@ -101,7 +101,7 @@ class Circle:
         self.scene = scene
 
     def get_radius(self):
-        return self.radius * scale_factor
+        return self.radius * Scene.scale_factor
 
     def distance_to(self, other):
         """ 计算与参数other的距离
@@ -125,8 +125,10 @@ class Circle:
         return math.sqrt(dx ** 2 + dy ** 2) * n
 
     def is_intersect(self, other):
-        """other is instance of Box"""
-        return self.distance_to(other).norm() < self.radius
+        if isinstance(other, Box):
+            return self.distance_to(other).norm() < self.radius
+        elif isinstance(other, Circle):
+            return self.distance_to(other).norm() < self.radius + other.radius
 
     def ped_repulsive_force(self):
         """ 计算行人与其他行人间的排斥力
@@ -179,8 +181,7 @@ class Circle:
             vc是当前速度，t_c是特征时间
         :return: 期望力
         """
-        pf = AStarPathFinder()
-        e = pf.get_direction(self.scene, self)
+        e = SFM.PathFinder.get_direction(self.scene, self)
         print("desired_dir:"+str(e))
         return (param['desired_speed'] * e - self.vel) / param['ch_time'] * self.mass
 
@@ -189,10 +190,10 @@ class Circle:
         f1 = self.ped_repulsive_force()
         f2 = self.wall_repulsive_force()
         f3 = self.desired_force()
-        print("\nped:" + str(f1))
-        print("wall:" + str(f2))
+       # print("\nped:" + str(f1))
+        #print("wall:" + str(f2))
         print("desired:" + str(f3))
-        print("合力:"+str(f1+f2+f3))
+       # print("合力:"+str(f1+f2+f3))
         if path_finder_test:
             return f3
         return f1 + f2 + f3
@@ -260,6 +261,7 @@ class Scene:
         dests: 目标位置们，Box类型的列表，可以包含在boxes中
         peds: 行人们，Circle类型，可以是一个列表
     """
+    scale_factor = 1
     def __init__(self, dests=None, peds=None, boxes=None):
         self.border = None
         self.dests = dests

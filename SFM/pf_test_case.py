@@ -3,6 +3,7 @@
 
 from GuiModel.Gui import SfmGui
 from SFM import BasicClasses
+import SFM.PathFinder
 
 if __name__ == '__main__':
     '''
@@ -12,6 +13,7 @@ if __name__ == '__main__':
     '''
     BasicClasses.pf_test()
     scene = BasicClasses.Scene()
+    BasicClasses.Scene.scale_factor = 60
     peds = []
     scene.peds = peds
     ped1 = BasicClasses.Circle(1.0, 3.0, 2.0, 0.0, 80, scene)
@@ -21,14 +23,14 @@ if __name__ == '__main__':
     scene.boxes = []
     scene.boxes.append(BasicClasses.Box(0.0, 4.0, 5.0, 5.0))
     scene.boxes.append(BasicClasses.Box(0.0, 0.0, 5.0, 1.0))
-    scene.boxes.append(BasicClasses.Box(5.0, 3.0, 6.0, 5.0))
-    scene.boxes.append(BasicClasses.Box(5.0, 0.0, 6.0, 2.0))
+    scene.boxes.append(BasicClasses.Box(5.0, 3.5, 6.0, 5.0))
+    scene.boxes.append(BasicClasses.Box(5.0, 0.0, 6.0, 1.5))
     scene.boxes.append(BasicClasses.Box(3.0, 2.0, 4.0, 3.0)) # 障碍物
 
     scene.dests = []
     scene.dests.append(BasicClasses.Box(8.0, 0.0, 9.0, 1.0))
     scene.border = BasicClasses.Vector2D(10.0, 6.0)
-
+    SFM.PathFinder.path_finder_init(scene)
     g_gui = SfmGui(scene, 10000)
 
     g_gui.root.mainloop()
