@@ -4,7 +4,7 @@ import math
 
 
 class Node:
-    def __init__(self, box, coord):
+    def __init__(self, box, coord, id):
         self.f = None
         self.g = None
         self.parent = None
@@ -12,6 +12,7 @@ class Node:
         self.box = box
         self.occupied = False
         self.coord = coord
+        self.id = id
 
 
 class AStarPathFinder:
@@ -26,19 +27,22 @@ class AStarPathFinder:
         self.goal = None
         self.scale_factor = 1 # an integer
         self.build_nodes()
+        self.node_list = [self.nodes[i][j] for i in range(len(self.nodes)) for j in range(len(self.nodes[0]))]
+        self.open = []
+        self.close = []
 
     def build_nodes(self):
         """调用此方法来读取场景，初始化AStarPathFinder"""
         x_max = math.ceil(self.scene.border.x) * self.scale_factor
         y_max = math.ceil(self.scene.border.y) * self.scale_factor
         self.nodes = []
-        for i in range(0, int(x_max)):
+        for i in range(0, x_max):
             list = []
             self.nodes.append(list)
-            for j in range(0, int(y_max)):
+            for j in range(0, y_max):
                 box = SFM.BasicClasses.Box(i, j, i + 1, j + 1)
                 box.scale(1/self.scale_factor)
-                node = Node(box, (i, j))
+                node = Node(box, (i, j), j + i * y_max)
                 list.append(node)
         for box in self.scene.boxes:
             x_max = round(box.p2.x * self.scale_factor)
@@ -56,6 +60,19 @@ class AStarPathFinder:
         for i in range(len(self.nodes)):
             for j in range(len(self.nodes[i])):
                 self.nodes[i][j].parent = None
+                self.nodes[i][j].f = None
+                self.nodes[i][j].g = None
+                self.nodes[i][j].occupied = False
+        for box in self.scene.boxes:
+            x_max = round(box.p2.x * self.scale_factor)
+            x_min = int(box.p1.x * self.scale_factor)
+            y_max = round(box.p2.y * self.scale_factor)
+            y_min = int(box.p1.y * self.scale_factor)
+            for x in range(x_min, x_max):
+                for y in range(y_min, y_max):
+                    node = self.nodes[x][y]
+                    if box.is_intersect(node.box):
+                        node.occupied = True
         for ped in self.scene.peds:
             if ped == start:
                 continue
@@ -95,7 +112,8 @@ class AStarPathFinder:
     def get_lowest(self, open_set):
         lowest = float("inf")
         lowest_node = None
-        for node in open_set:
+        for node_id in open_set:
+            node = self.node_list[node_id]
             if node.f < lowest:
                 lowest = node.f
                 lowest_node = node
@@ -107,31 +125,59 @@ class AStarPathFinder:
             node.parent.next = node
             node = node.parent
 
+    def node_in_set(self, node_set, node_id):
+        low = 0
+        high = len(node_set) - 1
+        while low <= high:
+            mid = (low + high) // 2
+            if node_id == node_set[mid]:
+                return True, low
+            elif node_id > node_set[mid]:
+                low = mid + 1
+            else:
+                high = mid - 1
+        return False, low
+
+    def insert_node(self, node_set, node_id):
+        is_in, index = self.node_in_set(node_set, node_id)
+        if not is_in:
+            node_set.insert(index, node_id)
+
+    def remove_node(self, node_set, node_id):
+        is_in, index = self.node_in_set(node_set, node_id)
+        if is_in:
+            node_set.remove(node_id)
+
     def a_star(self, start, goal):
         """http://theory.stanford.edu/~amitp/GameProgramming/ImplementationNotes.html"""
-        open_set = {start}
-        closed_set = set()
+        open_set = [start.id]
+        closed_set = []
         start.g = 0
         start.f = start.g + self.heuristic_estimate(start, goal)
+        num_out = 0
+        num_in = 0
         while len(open_set) != 0:
+            num_out = num_out + 1
             current = self.get_lowest(open_set)
             if current == goal:
                 self.construct_path(goal)
+                print(num_out)
+                print(num_in)
                 return
-            open_set.remove(current)
-            closed_set.add(current)
+            self.remove_node(open_set, current.id)
+            self.insert_node(closed_set, current.id)
             for neighbor in self.neighbors(current):
+                num_in = num_in + 1
                 cost = current.g + self.dist_between(current, neighbor)
-                if neighbor in open_set and cost < neighbor.g:
-                    open_set.remove(neighbor)
-                if neighbor in closed_set and cost < neighbor.g:
-                    closed_set.remove(neighbor)
-                if neighbor not in open_set and neighbor not in closed_set:
+                # g是None说明没有检查过，既不在open_set也不再closed_set
+                if neighbor.g is None or cost < neighbor.g:
                     neighbor.g = cost
                     neighbor.f = neighbor.g + self.heuristic_estimate(neighbor, goal)
                     neighbor.parent = current
-                    open_set.add(neighbor)
+                    self.insert_node(open_set, neighbor.id)
         # 无路可走
+        print(num_out)
+        print(num_in)
 
     def get_node(self, pos):
         x = int(pos.x * self.scale_factor)

@@ -17,7 +17,7 @@ param = {
     'r_upper': 0.35,
     'r_lower': 0.25,
     'ch_time': 0.5,
-    'time_step': 0.02
+    'time_step': 0.05
 }
 
 

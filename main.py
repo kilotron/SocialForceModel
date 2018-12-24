@@ -36,8 +36,8 @@ if __name__ == '__main__':
     scene.dests = []
     scene.dests.append(BasicClasses.Box(8.0, 0.0, 9.0, 5.0))
     scene.border = BasicClasses.Vector2D(10.0, 6.0)"""
-    scene = get_scene0()
-    BasicClasses.pf_test()
+    scene = get_scene1()
+    #BasicClasses.pf_test()
     SFM.PathFinder.path_finder_init(scene)
     g_gui = SfmGui(scene, 10000)
 

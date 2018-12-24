@@ -31,3 +31,23 @@ def get_scene0():
     scene.dests = []
     scene.dests.append(Box(52.0, 0.0, 60.0, 30.0))
     return scene
+
+def get_scene1():
+    #global scale_factor
+    scene = Scene()
+    Scene.scale_factor = 18
+    scene.border = Vector2D(30.0, 30.0)
+    scene.peds = []
+    scene.peds.append(Circle(13.0, 3.0, 2.0, 0.0, 80, scene))
+    scene.peds.append(Circle(2.0, 3.0, 1.0, 0.0, 80, scene))
+    scene.peds.append(Circle(2.0, 2.0, 1.0, 0.0, 80, scene))
+
+    scene.boxes = []
+    scene.boxes.append(Box(0.0, 0.0, 25.0, 0.5))
+    scene.boxes.append(Box(25.0, 0.0, 25.5, 22.5))
+    scene.boxes.append(Box(0.0, 0.5, 0.5, 24.5))
+    scene.boxes.append(Box(0.0, 24.5, 25.5, 25.0))
+
+    scene.dests = []
+    scene.dests.append(Box(26.0, 0.0, 30.0, 15.0))
+    return scene
