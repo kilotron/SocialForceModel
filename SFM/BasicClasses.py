@@ -12,12 +12,12 @@ import pickle
 param = {
     'A': 2000.0,
     'B': 0.08,
-    'desired_speed': 2.0,
+    'desired_speed': 4.0,
     'mass': 80.0,
     'r_upper': 0.35,
     'r_lower': 0.25,
     'ch_time': 0.5,
-    'time_step': 0.05
+    'time_step': 0.008
 }
 
 
@@ -182,7 +182,7 @@ class Circle:
         :return: 期望力
         """
         e = SFM.PathFinder.get_direction(self.scene, self)
-        print("desired_dir:"+str(e))
+        #print("desired_dir:"+str(e))
         return (param['desired_speed'] * e - self.vel) / param['ch_time'] * self.mass
 
     def get_force(self):
@@ -192,7 +192,7 @@ class Circle:
         f3 = self.desired_force()
        # print("\nped:" + str(f1))
         #print("wall:" + str(f2))
-        print("desired:" + str(f3))
+        #print("desired:" + str(f3))
        # print("合力:"+str(f1+f2+f3))
         if path_finder_test:
             return f3
@@ -210,9 +210,9 @@ class Circle:
         self.next_pos = self.pos + self.vel * param['time_step']
         acc = self.accleration()
         self.next_vel = self.vel + acc * param['time_step']
-        print("vel:"+str(self.vel))
-        print("acc" + str(acc))
-        print("pos:"+str(self.pos))
+        #print("vel:"+str(self.vel))
+        #print("acc" + str(acc))
+        #print("pos:"+str(self.pos))
 
     def update_status(self):
         """ 更新此人的位置和速度

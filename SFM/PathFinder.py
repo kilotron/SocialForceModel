@@ -4,15 +4,19 @@ import math
 
 
 class Node:
-    def __init__(self, box, coord, id):
+    def __init__(self, box, x, y, id):
         self.f = None
         self.g = None
+        self.h = None
         self.parent = None
         self.next = None
         self.box = box
         self.occupied = False
-        self.coord = coord
+        self.x = x
+        self.y = y
         self.id = id
+        self.closed = False
+        self.open = False
 
 
 class AStarPathFinder:
@@ -42,7 +46,7 @@ class AStarPathFinder:
             for j in range(0, y_max):
                 box = SFM.BasicClasses.Box(i, j, i + 1, j + 1)
                 box.scale(1/self.scale_factor)
-                node = Node(box, (i, j), j + i * y_max)
+                node = Node(box, i, j, j + i * y_max)
                 list.append(node)
         for box in self.scene.boxes:
             x_max = round(box.p2.x * self.scale_factor)
@@ -56,64 +60,128 @@ class AStarPathFinder:
                         node.occupied = True
 
     def update_nodes(self, start):
-        """每推进一个时间步长调用此方法一次，更新行人的位置,start所在位置不设为occupied"""
+        """每推进一个时间步长调用此方法一次，更新行人"""
         for i in range(len(self.nodes)):
             for j in range(len(self.nodes[i])):
                 self.nodes[i][j].parent = None
                 self.nodes[i][j].f = None
                 self.nodes[i][j].g = None
-                self.nodes[i][j].occupied = False
-        for box in self.scene.boxes:
-            x_max = round(box.p2.x * self.scale_factor)
-            x_min = int(box.p1.x * self.scale_factor)
-            y_max = round(box.p2.y * self.scale_factor)
-            y_min = int(box.p1.y * self.scale_factor)
-            for x in range(x_min, x_max):
-                for y in range(y_min, y_max):
-                    node = self.nodes[x][y]
-                    if box.is_intersect(node.box):
-                        node.occupied = True
-        for ped in self.scene.peds:
-            if ped == start:
-                continue
-            x_max = int((ped.pos.x + ped.radius) * self.scale_factor) + 1
-            x_min = max(int((ped.pos.x - ped.radius) * self.scale_factor), 0)
-            y_max = int((ped.pos.y + ped.radius) * self.scale_factor) + 1
-            y_min = max(int((ped.pos.y - ped.radius) * self.scale_factor), 0)
-            for x in range(x_min, x_max):
-                for y in range(y_min, y_max):
-                    node = self.nodes[x][y]
-                    if ped.is_intersect(node.box):
-                        node.occupied = True
+                self.nodes[i][j].closed = False
+                self.nodes[i][j].open = False
+                #self.nodes[i][j].occupied = False
 
-    def valid_coord(self, coord):
-        return 0 <= coord[0] < len(self.nodes) and 0 <= coord[1] < len(self.nodes[0])
+    def is_walkable_at(self, x, y):
+        return 0 <= x < len(self.nodes) and 0 <= y < len(self.nodes[0]) and not self.nodes[x][y].occupied
+
+    def jump(self, cx, cy, dx, dy, start, goal):
+        nx = cx + dx
+        ny = cy + dy
+        if not self.is_walkable_at(nx, ny):
+            return None
+        if nx == goal.x and ny == goal.y:
+            return goal
+        # check for forced neighbors
+        if dx != 0 and dy != 0:
+            if (self.is_walkable_at(cx, ny + dy) and not self.is_walkable_at(cx, ny)) \
+                    or (self.is_walkable_at(nx + dx, cy) and not self.is_walkable_at(nx, cy)):
+                return self.nodes[nx][ny]
+            if self.jump(nx, ny, dx, 0, start, goal) is not None \
+                    or self.jump(nx, ny, 0, dy, start, goal) is not None:
+                return self.nodes[nx][ny]
+        # horizontally/vertically
+        else:
+            if dx != 0:
+                if (self.is_walkable_at(nx + dx, ny + 1) and not self.is_walkable_at(nx, ny + 1)) \
+                        or (self.is_walkable_at(nx + dx, ny - 1) and not self.is_walkable_at(nx, ny - 1)):
+                    return self.nodes[nx][ny]
+            else:
+                if (self.is_walkable_at(nx + 1, ny + dy) and not self.is_walkable_at(nx + 1, ny)) \
+                        or (self.is_walkable_at(nx - 1, ny + dy) and not self.is_walkable_at(nx - 1, ny)):
+                    return self.nodes[nx][ny]
+        return self.jump(nx, ny, dx, dy, start, goal)
+
+    def find_neighbors(self, node):
+        cx = node.x
+        cy = node.y
+        neighbors = []
+        if node.parent is not None:
+            px = node.parent.x
+            py = node.parent.y
+            dx = (cx - px) // max(abs(cx - px), 1)
+            dy = (cy - py) // max(abs(cy - py), 1)
+
+            if dx != 0 and dy != 0:
+                if self.is_walkable_at(cx, cy + dy):
+                    neighbors.append(self.nodes[cx][cy + dy])
+                if self.is_walkable_at(cx + dx, cy):
+                    neighbors.append(self.nodes[cx + dx][cy])
+                if self.is_walkable_at(cx + dx, cy + dy):
+                    neighbors.append(self.nodes[cx + dx][cy + dy])
+                # forced neighbors:
+                if not self.is_walkable_at(cx - dx, cy):
+                    neighbors.append(self.nodes[cx - dx][cy + dy])
+                if not self.is_walkable_at(cx, cy - dy):
+                    neighbors.append(self.nodes[cx + dx][cy - dy])
+            else:
+                if dx == 0:
+                    if self.is_walkable_at(cx, cy + dy):
+                        neighbors.append(self.nodes[cx][cy + dy])
+                    if not self.is_walkable_at(cx + 1, cy):
+                        neighbors.append(self.nodes[cx + 1][cy + dy])
+                    if not self.is_walkable_at(cx - 1, cy):
+                        neighbors.append(self.nodes[cx - 1][cy + dy])
+                else:
+                    if self.is_walkable_at(cx + dx, cy):
+                        neighbors.append(self.nodes[cx + dx][cy])
+                    if not self.is_walkable_at(cx, cy + 1):
+                        neighbors.append(self.nodes[cx + dx][cy + 1])
+                    if not self.is_walkable_at(cx, cy - 1):
+                        neighbors.append(self.nodes[cx + dx][cy - 1])
+        else:  # no parent
+            neighbors = self.neighbors(node)
+        return neighbors
 
     def neighbors(self, node):
         xs = (-1, 0, 1, -1, 1, -1, 0, 1)
         ys = (-1, -1, -1, 0, 0, 1, 1, 1)
         neighbors = []
-        for x, y in zip(xs, ys):
-            nx = node.coord[0] + x
-            ny = node.coord[1] + y
-            if self.valid_coord((nx, ny)) and not self.nodes[nx][ny].occupied:
+        for dx, dy in zip(xs, ys):
+            nx = node.x + dx
+            ny = node.y + dy
+            if self.is_walkable_at(nx, ny):
                 neighbors.append(self.nodes[nx][ny])
         return neighbors
 
+    def identify_successors(self, node, open_list, start, goal):
+        neighbors = self.find_neighbors(node)
+        for neighbor in neighbors:
+            dx = neighbor.x - node.x
+            dy = neighbor.y - node.y
+            jump_node = self.jump(node.x, node.y, dx, dy, start, goal)
+            if jump_node is not None and not jump_node.closed:
+                cost = node.g + self.dist_between(node, neighbor)
+                if not jump_node.open or cost < jump_node.g:
+                    jump_node.g = cost
+                    jump_node.h = self.heuristic_estimate(jump_node, goal)
+                    jump_node.f = jump_node.g + jump_node.h
+                    jump_node.parent = node
+                    if not jump_node.open:
+                        open_list.append(jump_node)
+                        jump_node.open = True
+
     def heuristic_estimate(self, start, goal):
-        return abs(start.coord[0] - goal.coord[0]) + abs(start.coord[1] - goal.coord[1])
+        return abs(start.x - goal.x) + abs(start.y - goal.y)
 
     def dist_between(self, node1, node2):
         """ distance between neighbors"""
-        if node1.coord[0] == node2.coord[0] or node1.coord[1] == node2.coord[1]:
+        if node1.x == node2.x or node1.y == node2.y:
             return 1.0
         return 1.4
 
     def get_lowest(self, open_set):
         lowest = float("inf")
         lowest_node = None
-        for node_id in open_set:
-            node = self.node_list[node_id]
+        for node in open_set:
             if node.f < lowest:
                 lowest = node.f
                 lowest_node = node
@@ -125,59 +193,26 @@ class AStarPathFinder:
             node.parent.next = node
             node = node.parent
 
-    def node_in_set(self, node_set, node_id):
-        low = 0
-        high = len(node_set) - 1
-        while low <= high:
-            mid = (low + high) // 2
-            if node_id == node_set[mid]:
-                return True, low
-            elif node_id > node_set[mid]:
-                low = mid + 1
-            else:
-                high = mid - 1
-        return False, low
-
-    def insert_node(self, node_set, node_id):
-        is_in, index = self.node_in_set(node_set, node_id)
-        if not is_in:
-            node_set.insert(index, node_id)
-
-    def remove_node(self, node_set, node_id):
-        is_in, index = self.node_in_set(node_set, node_id)
-        if is_in:
-            node_set.remove(node_id)
-
     def a_star(self, start, goal):
         """http://theory.stanford.edu/~amitp/GameProgramming/ImplementationNotes.html"""
-        open_set = [start.id]
-        closed_set = []
+        open_list = [start]
         start.g = 0
         start.f = start.g + self.heuristic_estimate(start, goal)
-        num_out = 0
+        start.open = True
         num_in = 0
-        while len(open_set) != 0:
-            num_out = num_out + 1
-            current = self.get_lowest(open_set)
+        while len(open_list) != 0:
+            #num_in += 1
+            current = self.get_lowest(open_list)
             if current == goal:
+                #print(num_in)
                 self.construct_path(goal)
-                print(num_out)
-                print(num_in)
                 return
-            self.remove_node(open_set, current.id)
-            self.insert_node(closed_set, current.id)
-            for neighbor in self.neighbors(current):
-                num_in = num_in + 1
-                cost = current.g + self.dist_between(current, neighbor)
-                # g是None说明没有检查过，既不在open_set也不再closed_set
-                if neighbor.g is None or cost < neighbor.g:
-                    neighbor.g = cost
-                    neighbor.f = neighbor.g + self.heuristic_estimate(neighbor, goal)
-                    neighbor.parent = current
-                    self.insert_node(open_set, neighbor.id)
+            open_list.remove(current)
+            current.open = False
+            current.closed = True
+            self.identify_successors(current, open_list, start, goal)
+        #print(num_in)
         # 无路可走
-        print(num_out)
-        print(num_in)
 
     def get_node(self, pos):
         x = int(pos.x * self.scale_factor)
@@ -187,17 +222,17 @@ class AStarPathFinder:
         for i, j in zip(xs, ys):
             nx = x + i
             ny = y + j
-            if not self.valid_coord((nx, ny)):
+            if not (0 <= x < len(self.nodes) and 0 <= y < len(self.nodes[0])):
                 continue
             node = self.nodes[nx][ny]
             if node.box.is_in(pos):
                 return node
+        return None
 
 
 def path_finder_init(scene):
     global pf
     pf = AStarPathFinder(scene)
-
 
 def get_direction(scene, source):
     """ 寻找路径，获得下一步运动的方向
@@ -208,8 +243,10 @@ def get_direction(scene, source):
     pf.update_nodes(source)
     start = pf.get_node(source.pos)
     goal = pf.get_node(scene.dests[0].center())
+    if start is None: # 出界
+        return SFM.BasicClasses.Vector2D(0, 0)
     pf.a_star(start, goal)
     if start.next is None:
         return SFM.BasicClasses.Vector2D(0, 0)
-    e = SFM.BasicClasses.Vector2D(start.next.coord[0] - start.coord[0], start.next.coord[1] - start.coord[1])
+    e = SFM.BasicClasses.Vector2D(start.next.x - start.x, start.next.y - start.y)
     return e / e.norm()
