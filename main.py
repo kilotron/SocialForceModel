@@ -13,7 +13,8 @@ if __name__ == '__main__':
     peds: 行人们，Circle类型，可以是一个列表
     '''
     #BasicClasses.pf_test()
-    scene = get_scene2()
+    scene = get_scene2() # 横向障碍物
+    #scene = get_scene3() # 纵向障碍物
     SFM.PathFinder.path_finder_init(scene)
     g_gui = SfmGui(scene, 10000)
 

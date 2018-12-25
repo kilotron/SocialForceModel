@@ -25,8 +25,8 @@ path_finder_test = False
 
 
 def get_time_step():
-    # return param['time_step']
-    return 0
+    return param['time_step']
+    #return 0.0
 
 def pf_test():
     global path_finder_test
@@ -183,8 +183,9 @@ class Circle:
             vc是当前速度，t_c是特征时间
         :return: 期望力
         """
+        #if self.is_intersect(self.scene.dests[0]):
+         #   return Vector2D(0.0, 0.0)
         e = SFM.PathFinder.get_direction(self.scene, self)
-        #print("desired_dir:"+str(e))
         return (param['desired_speed'] * e - self.vel) / param['ch_time'] * self.mass
 
     def get_force(self):
@@ -192,10 +193,6 @@ class Circle:
         f1 = self.ped_repulsive_force()
         f2 = self.wall_repulsive_force()
         f3 = self.desired_force()
-       # print("\nped:" + str(f1))
-        #print("wall:" + str(f2))
-        #print("desired:" + str(f3))
-       # print("合力:"+str(f1+f2+f3))
         if path_finder_test:
             return f3
         return f1 + f2 + f3
@@ -212,9 +209,6 @@ class Circle:
         self.next_pos = self.pos + self.vel * param['time_step']
         acc = self.accleration()
         self.next_vel = self.vel + acc * param['time_step']
-        #print("vel:"+str(self.vel))
-        #print("acc" + str(acc))
-        #print("pos:"+str(self.pos))
 
     def update_status(self):
         """ 更新此人的位置和速度
@@ -264,6 +258,7 @@ class Scene:
         peds: 行人们，Circle类型，可以是一个列表
     """
     scale_factor = 1
+
     def __init__(self, dests=None, peds=None, boxes=None):
         self.border = None
         self.dests = dests
@@ -283,12 +278,15 @@ class Scene:
             self.scale_factor = read_data.scale_factor
             SFM.PathFinder.path_finder_init(self)
 
+    def all_peds_arrived(self):
+        all_arrived = True
+        for ped in self.peds:
+            if not ped.is_intersect(self.dests[0]):
+                all_arrived = False
+        return all_arrived
+
     def update(self):
         """ 推进一个时间步长，更新行人们的位置"""
-        """
-        for ped in self.peds:
-            ped.pos.x += 2
-            ped.pos.y += 2"""
         for ped in self.peds:
             ped.compute_next(scene=self)
         for ped in self.peds:

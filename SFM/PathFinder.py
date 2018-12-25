@@ -66,7 +66,6 @@ class AStarPathFinder:
                 self.nodes[i][j].g = None
                 self.nodes[i][j].closed = False
                 self.nodes[i][j].open = False
-                #self.nodes[i][j].occupied = False
 
     def is_walkable_at(self, x, y):
         return 0 <= x < len(self.nodes) and 0 <= y < len(self.nodes[0]) and not self.nodes[x][y].occupied
@@ -202,19 +201,15 @@ class AStarPathFinder:
         start.g = 0
         start.f = start.g + self.heuristic_estimate(start, goal)
         start.open = True
-        num_in = 0
         while len(open_list) != 0:
-            #num_in += 1
             current = self.get_lowest(open_list)
             if current == goal:
-                #print(num_in)
                 self.construct_path(goal)
                 return
             open_list.remove(current)
             current.open = False
             current.closed = True
             self.identify_successors(current, open_list, start, goal)
-        #print(num_in)
         # 无路可走
 
     def get_node(self, pos):
