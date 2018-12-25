@@ -28,9 +28,11 @@ def get_time_step():
     return param['time_step']
     #return 0.0
 
+
 def pf_test():
     global path_finder_test
     path_finder_test = True
+
 
 class Vector2D:
     """ 二维向量，表示力、速度、位置或者方向。
@@ -183,8 +185,6 @@ class Circle:
             vc是当前速度，t_c是特征时间
         :return: 期望力
         """
-        #if self.is_intersect(self.scene.dests[0]):
-         #   return Vector2D(0.0, 0.0)
         e = SFM.PathFinder.get_direction(self.scene, self)
         return (param['desired_speed'] * e - self.vel) / param['ch_time'] * self.mass
 
