@@ -69,7 +69,10 @@ class SfmGui:
     def begin_simulate(self):
         for i in range(self.epoch):
             time.sleep(TIME_STEP)
-            self.scene.update()
+            try:
+                self.scene.update()
+            except IndexError:
+                exit(0)
             # print(gui.scene.peds)
             i = 0
             for ped in self.peds:
@@ -88,6 +91,9 @@ class SfmGui:
             self.pre_peds = copy.deepcopy(self.peds)
 
     def begin_simulate_btn(self, event):
+        if self.th and self.th.isAlive():
+            stop_thread(self.th)
+            self.th = None
         self.th = threading.Thread(target=self.begin_simulate, args=())
         self.th.setDaemon(True)
         self.th.start()
@@ -157,6 +163,7 @@ class SfmGui:
         # 重置场景
         if self.th and self.th.isAlive():
             stop_thread(self.th)
+            self.th = None
         scene = copy.deepcopy(self.default_scene)
         self.change_scene(scene)
 
@@ -192,6 +199,7 @@ class SfmGui:
         # 读取场景
         if self.th and self.th.isAlive():
             stop_thread(self.th)
+            self.th = None
         input_path = self.the_path.get()
         scene = BasicClasses.Scene()
         # print(input_path)
