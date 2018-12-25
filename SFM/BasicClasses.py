@@ -12,19 +12,21 @@ import pickle
 param = {
     'A': 2000.0,
     'B': 0.08,
-    'desired_speed': 4.0,
+    'desired_speed': 2.0,
     'mass': 80.0,
     'r_upper': 0.35,
     'r_lower': 0.25,
     'ch_time': 0.5,
-    'time_step': 0.008
+    'time_step': 0.01
 }
 
 
 path_finder_test = False
 
+
 def get_time_step():
-    return param['time_step']
+    # return param['time_step']
+    return 0
 
 def pf_test():
     global path_finder_test
@@ -278,6 +280,8 @@ class Scene:
             self.peds = read_data.peds
             self.boxes = read_data.boxes
             self.border = read_data.border
+            self.scale_factor = read_data.scale_factor
+            SFM.PathFinder.path_finder_init(self)
 
     def update(self):
         """ 推进一个时间步长，更新行人们的位置"""

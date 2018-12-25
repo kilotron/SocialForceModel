@@ -1,7 +1,7 @@
 # 路径寻找算法
 import SFM.BasicClasses
 import math
-
+import random
 
 class Node:
     def __init__(self, box, x, y, id):
@@ -32,8 +32,6 @@ class AStarPathFinder:
         self.scale_factor = 1 # an integer
         self.build_nodes()
         self.node_list = [self.nodes[i][j] for i in range(len(self.nodes)) for j in range(len(self.nodes[0]))]
-        self.open = []
-        self.close = []
 
     def build_nodes(self):
         """调用此方法来读取场景，初始化AStarPathFinder"""
@@ -76,29 +74,34 @@ class AStarPathFinder:
     def jump(self, cx, cy, dx, dy, start, goal):
         nx = cx + dx
         ny = cy + dy
-        if not self.is_walkable_at(nx, ny):
-            return None
-        if nx == goal.x and ny == goal.y:
-            return goal
-        # check for forced neighbors
-        if dx != 0 and dy != 0:
-            if (self.is_walkable_at(cx, ny + dy) and not self.is_walkable_at(cx, ny)) \
-                    or (self.is_walkable_at(nx + dx, cy) and not self.is_walkable_at(nx, cy)):
-                return self.nodes[nx][ny]
-            if self.jump(nx, ny, dx, 0, start, goal) is not None \
-                    or self.jump(nx, ny, 0, dy, start, goal) is not None:
-                return self.nodes[nx][ny]
-        # horizontally/vertically
-        else:
-            if dx != 0:
-                if (self.is_walkable_at(nx + dx, ny + 1) and not self.is_walkable_at(nx, ny + 1)) \
-                        or (self.is_walkable_at(nx + dx, ny - 1) and not self.is_walkable_at(nx, ny - 1)):
+        while True:
+            if not self.is_walkable_at(nx, ny):
+                return None
+            if nx == goal.x and ny == goal.y:
+                return goal
+            # check for forced neighbors
+            if dx != 0 and dy != 0:
+                if (self.is_walkable_at(cx, ny + dy) and not self.is_walkable_at(cx, ny)) \
+                        or (self.is_walkable_at(nx + dx, cy) and not self.is_walkable_at(nx, cy)):
                     return self.nodes[nx][ny]
+                if self.jump(nx, ny, dx, 0, start, goal) is not None \
+                        or self.jump(nx, ny, 0, dy, start, goal) is not None:
+                    return self.nodes[nx][ny]
+            # horizontally/vertically
             else:
-                if (self.is_walkable_at(nx + 1, ny + dy) and not self.is_walkable_at(nx + 1, ny)) \
-                        or (self.is_walkable_at(nx - 1, ny + dy) and not self.is_walkable_at(nx - 1, ny)):
-                    return self.nodes[nx][ny]
-        return self.jump(nx, ny, dx, dy, start, goal)
+                if dx != 0:
+                    if (self.is_walkable_at(nx + dx, ny + 1) and not self.is_walkable_at(nx, ny + 1)) \
+                            or (self.is_walkable_at(nx + dx, ny - 1) and not self.is_walkable_at(nx, ny - 1)):
+                        return self.nodes[nx][ny]
+                else:
+                    if (self.is_walkable_at(nx + 1, ny + dy) and not self.is_walkable_at(nx + 1, ny)) \
+                            or (self.is_walkable_at(nx - 1, ny + dy) and not self.is_walkable_at(nx - 1, ny)):
+                        return self.nodes[nx][ny]
+            cx = nx
+            cy = ny
+            nx = cx + dx
+            ny = cy + dy
+        #return self.jump(nx, ny, dx, dy, start, goal)
 
     def find_neighbors(self, node):
         cx = node.x
@@ -242,7 +245,9 @@ def get_direction(scene, source):
     global pf
     pf.update_nodes(source)
     start = pf.get_node(source.pos)
-    goal = pf.get_node(scene.dests[0].center())
+    d = scene.dests[0]
+    dest = SFM.BasicClasses.Vector2D(d.p1.x, d.p1.y)
+    goal = pf.get_node(dest)
     if start is None: # 出界
         return SFM.BasicClasses.Vector2D(0, 0)
     pf.a_star(start, goal)
