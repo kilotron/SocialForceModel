@@ -220,7 +220,7 @@ class AStarPathFinder:
         for i, j in zip(xs, ys):
             nx = x + i
             ny = y + j
-            if not (0 <= x < len(self.nodes) and 0 <= y < len(self.nodes[0])):
+            if not (0 <= nx < len(self.nodes) and 0 <= ny < len(self.nodes[0])):
                 continue
             node = self.nodes[nx][ny]
             if node.box.is_in(pos):

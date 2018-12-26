@@ -79,7 +79,7 @@ def get_scene2():
     scene.boxes.append(Box(6.0, 7.0, 7.0, 10.0))
 
     scene.peds = []
-    for i in range(5):
+    for i in range(45):
         ped = None
         # 调用is_valid()函数来测试产生的行人是否合适：没有与其他人或墙重叠
         while not is_valid(scene, ped):

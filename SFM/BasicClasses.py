@@ -17,7 +17,7 @@ param = {
     'r_upper': 0.35,
     'r_lower': 0.25,
     'ch_time': 0.5,
-    'time_step': 0.01
+    'time_step': 0.005
 }
 
 
@@ -202,12 +202,16 @@ class Circle:
         """ 根据合力和质量计算加速度
         :return: 加速度
         """
-        return self.get_force() / self.mass
+        acc = self.get_force() / self.mass
+        if acc.norm() > 5:
+            acc = acc / acc.norm() * 4
+        return acc
 
     def compute_next(self, scene):
         self.scene = scene
         self.next_pos = self.pos + self.vel * param['time_step']
         acc = self.accleration()
+        #print("acc:"+str(acc))
         self.next_vel = self.vel + acc * param['time_step']
 
     def update_status(self):
