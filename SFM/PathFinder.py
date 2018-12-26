@@ -242,6 +242,7 @@ def get_direction(scene, source):
     start = pf.get_node(source.pos)
     d = scene.dests[0]
     dest = SFM.BasicClasses.Vector2D(d.p1.x, d.p1.y)
+    #dest = d.center()
     goal = pf.get_node(dest)
     if start is None: # 出界
         return SFM.BasicClasses.Vector2D(0, 0)

@@ -103,6 +103,7 @@ class Circle:
         self.radius = random.uniform(param['r_lower'], param['r_upper'])
         self.mass = mass
         self.scene = scene
+        self.arrived = False
 
     def get_radius(self):
         return self.radius * Scene.scale_factor
@@ -285,8 +286,10 @@ class Scene:
     def all_peds_arrived(self):
         all_arrived = True
         for ped in self.peds:
-            if not ped.is_intersect(self.dests[0]):
+            if not ped.arrived:
                 all_arrived = False
+            if ped.is_intersect(self.dests[0]):
+                ped.arrived = True
         return all_arrived
 
     def update(self):
