@@ -72,8 +72,8 @@ class SfmGui:
         self.th = None
 
     def begin_simulate(self):
-        for i in range(self.epoch):
-            time.sleep(TIME_STEP)
+        while not self.scene.all_peds_arrived():
+            # time.sleep(TIME_STEP)
             self.timeNow = self.timeNow + TIME_STEP
             self.timeNowStr.set("%.4f" % self.timeNow)
             try:
@@ -290,7 +290,7 @@ class SfmGui:
         x = ped[0].pos.get_x()
         y = ped[0].pos.get_y()
         r = ped[0].get_radius()
-       # r = ped[0].radius * scale_factor
+        # r = ped[0].radius * scale_factor
         ped[1] = self.canvas.create_oval((x - r, y - r, x + r, y + r), fill=fill)
 
     def add_dest(self, dest, fill="black"):

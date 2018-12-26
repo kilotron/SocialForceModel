@@ -35,7 +35,8 @@ def get_scene0():
     scene.dests.append(Box(52.0, 0.0, 60.0, 30.0))
     return scene
 
-def get_scene1():
+
+def get_scene1(person_num=10):
     scene = Scene()
     Scene.scale_factor = 18
     scene.border = Vector2D(30.0, 30.0)
@@ -50,7 +51,7 @@ def get_scene1():
     scene.peds.append(Circle(13.0, 3.0, 2.0, 0.0, 80, scene))
     scene.peds.append(Circle(2.0, 3.0, 1.0, 0.0, 80, scene))
     scene.peds.append(Circle(2.0, 2.0, 1.0, 0.0, 80, scene))
-    for i in range(10):
+    for i in range(person_num):
         ped = None
         while not is_valid(scene, ped):
             ped = Circle(random.uniform(0, 20), random.uniform(0, 20), 0.5, 0.5, 80)
@@ -60,7 +61,8 @@ def get_scene1():
     scene.dests.append(Box(26.0, 0.0, 30.0, 15.0))
     return scene
 
-def get_scene2():
+
+def get_scene2(person_num=10):
     scene = Scene()
     # 调整这个参数来适应GUI显示
     Scene.scale_factor = 36
@@ -79,7 +81,7 @@ def get_scene2():
     scene.boxes.append(Box(6.0, 7.0, 7.0, 10.0))
 
     scene.peds = []
-    for i in range(45):
+    for i in range(person_num):
         ped = None
         # 调用is_valid()函数来测试产生的行人是否合适：没有与其他人或墙重叠
         while not is_valid(scene, ped):
@@ -92,7 +94,8 @@ def get_scene2():
     scene.dests.append(Box(13.0, 0.0, 15.0, 15.0))
     return scene
 
-def get_scene3():
+
+def get_scene3(person_num=10):
     scene = Scene()
     # 调整这个参数来适应GUI显示
     Scene.scale_factor = 36
@@ -111,7 +114,7 @@ def get_scene3():
     scene.boxes.append(Box(5.0, 8.0, 8.0, 9.0))
 
     scene.peds = []
-    for i in range(5):
+    for i in range(person_num):
         ped = None
         # 调用is_valid()函数来测试产生的行人是否合适：没有与其他人或墙重叠
         while not is_valid(scene, ped):
