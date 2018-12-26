@@ -26,7 +26,6 @@ path_finder_test = False
 
 def get_time_step():
     return param['time_step']
-    # return 0.0
 
 
 def pf_test():
@@ -212,7 +211,6 @@ class Circle:
         self.scene = scene
         self.next_pos = self.pos + self.vel * param['time_step']
         acc = self.accleration()
-        #print("acc:"+str(acc))
         self.next_vel = self.vel + acc * param['time_step']
 
     def update_status(self):
@@ -303,6 +301,3 @@ class Scene:
         """ 保存场景到路径path"""
         with open(path, "wb") as f:
             pickle.dump(self, f)
-
-
-

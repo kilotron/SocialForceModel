@@ -1,7 +1,6 @@
-# 路径寻找算法
 import SFM.BasicClasses
 import math
-import random
+
 
 class Node:
     def __init__(self, box, x, y, id):
@@ -20,16 +19,12 @@ class Node:
 
 
 class AStarPathFinder:
-    """
-    在这里完成A*算法
-    """
-
     def __init__(self, scene):
         self.scene = scene
         self.nodes = None
         self.start = None
         self.goal = None
-        self.scale_factor = 1 # an integer
+        self.scale_factor = 1 # 路径搜索所用的格子长度为1m/scale_factor。
         self.build_nodes()
         self.node_list = [self.nodes[i][j] for i in range(len(self.nodes)) for j in range(len(self.nodes[0]))]
 
@@ -100,7 +95,6 @@ class AStarPathFinder:
             cy = ny
             nx = cx + dx
             ny = cy + dy
-        #return self.jump(nx, ny, dx, dy, start, goal)
 
     def find_neighbors(self, node):
         cx = node.x
@@ -196,7 +190,6 @@ class AStarPathFinder:
             node = node.parent
 
     def a_star(self, start, goal):
-        """http://theory.stanford.edu/~amitp/GameProgramming/ImplementationNotes.html"""
         open_list = [start]
         start.g = 0
         start.f = start.g + self.heuristic_estimate(start, goal)
@@ -210,7 +203,6 @@ class AStarPathFinder:
             current.open = False
             current.closed = True
             self.identify_successors(current, open_list, start, goal)
-        # 无路可走
 
     def get_node(self, pos):
         x = int(pos.x * self.scale_factor)
@@ -242,7 +234,6 @@ def get_direction(scene, source):
     start = pf.get_node(source.pos)
     d = scene.dests[0]
     dest = SFM.BasicClasses.Vector2D(d.p1.x, d.p1.y)
-    #dest = d.center()
     goal = pf.get_node(dest)
     if start is None: # 出界
         return SFM.BasicClasses.Vector2D(0, 0)
