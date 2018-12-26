@@ -41,6 +41,8 @@ def stop_thread(thread):
 class SfmGui:
     def __init__(self, scene, epoch):
         self.epoch = epoch
+        self.timeNow = 0
+
         self.color_list = []
         self.color_list_init(MAX_COLOR)
         self.click_coordinate = {"x": -1, "y": -1, "box": None}
@@ -54,6 +56,9 @@ class SfmGui:
         self.root = tkinter.Tk()
         self.root.resizable(False, False)
         self.root.title("社会力模型模拟")
+
+        self.timeNowStr = tkinter.StringVar(self.root)
+
         self.canvas = tkinter.Canvas(self.root, bg=CANVAS_BG, width=MAX_X + 50, height=MAX_Y + 50)
 
         self.canvas.pack(side=tkinter.LEFT)
@@ -69,9 +74,12 @@ class SfmGui:
     def begin_simulate(self):
         for i in range(self.epoch):
             time.sleep(TIME_STEP)
+            self.timeNow = self.timeNow + TIME_STEP
+            self.timeNowStr.set("%.4f" % self.timeNow)
             try:
                 self.scene.update()
             except IndexError:
+                print("IndexError\n\n")
                 exit(0)
             # print(gui.scene.peds)
             i = 0
@@ -80,7 +88,7 @@ class SfmGui:
                 y = ped[0].pos.get_y()
                 # print(x, y)
                 r = ped[0].get_radius()
-                #r = ped[0].radius * scale_factor
+                # r = ped[0].radius * scale_factor
                 self.canvas.coords(ped[1], (x - r, y - r, x + r, y + r))
                 if self.pre_peds:
                     pre_x = self.pre_peds[i][0].pos.get_x()
@@ -161,6 +169,8 @@ class SfmGui:
 
     def reset_scene(self, event):
         # 重置场景
+        self.timeNow = 0
+        self.timeNowStr.set("%.4f" % self.timeNow)
         if self.th and self.th.isAlive():
             stop_thread(self.th)
             self.th = None
@@ -197,6 +207,8 @@ class SfmGui:
 
     def load(self, event, path):
         # 读取场景
+        self.timeNow = 0
+        self.timeNowStr.set("%.4f" % self.timeNow)
         if self.th and self.th.isAlive():
             stop_thread(self.th)
             self.th = None
@@ -236,6 +248,9 @@ class SfmGui:
 
     def bind_btn(self):
         # 绑定函数
+        tkinter.Label(self.frame, text='仿真时间为 ').pack()
+        tkinter.Label(self.frame, textvariable=self.timeNowStr).pack()
+
         self.canvas.bind("<Button-1>", lambda x: self.get_click(x))
         self.canvas.bind("<ButtonRelease-1>", lambda x: self.click_release(x))
 
