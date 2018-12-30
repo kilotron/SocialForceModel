@@ -1,8 +1,9 @@
 import random
 import math
 import numpy as np
-import SFM.PathFinder
+import SFM.QuickPathFinder
 import pickle
+import time
 
 """
     为了简化，我们对每个行人的参数A(N), B(m), desired_speed(m/s), mass(kg)取相同的值。
@@ -185,14 +186,25 @@ class Circle:
             vc是当前速度，t_c是特征时间
         :return: 期望力
         """
-        e = SFM.PathFinder.get_direction(self.scene, self)
+        e = SFM.QuickPathFinder.get_direction(self.scene, self)
         return (param['desired_speed'] * e - self.vel) / param['ch_time'] * self.mass
 
     def get_force(self):
         """ 计算合力"""
+        #start_time = time.clock()
         f1 = self.ped_repulsive_force()
+        #end = time.clock()
+        #print("ped Time:%.6f" % (end - start_time))
+
+        #start_time = time.clock()
         f2 = self.wall_repulsive_force()
+        #end = time.clock()
+        #print("wall Time:%.6f" % (end - start_time))
+
+        #start_time = time.clock()
         f3 = self.desired_force()
+        #end = time.clock()
+        #print("desired Time:%.6f" % (end - start_time))
         if path_finder_test:
             return f3
         return f1 + f2 + f3
@@ -202,9 +214,12 @@ class Circle:
         """ 根据合力和质量计算加速度
         :return: 加速度
         """
+        #start_time = time.clock()
         acc = self.get_force() / self.mass
-        if acc.norm() > 5:
-            acc = acc / acc.norm() * 4
+        #end = time.clock()
+        #print("force Time:%.6f" % (end - start_time))
+        if acc.norm() > 10:
+            acc = acc / acc.norm() * 10
         return acc
 
     def compute_next(self, scene):
@@ -267,6 +282,8 @@ class Scene:
         self.dests = dests
         self.peds = peds
         self.boxes = boxes
+        self.time_sum = 0
+        self.count = 0
 
     def load(self, path):
         """ 从文件中加载场景
@@ -279,7 +296,7 @@ class Scene:
             self.boxes = read_data.boxes
             self.border = read_data.border
             self.scale_factor = read_data.scale_factor
-            SFM.PathFinder.path_finder_init(self)
+            SFM.QuickPathFinder.path_finder_init(self)
 
     def all_peds_arrived(self):
         all_arrived = True
@@ -292,10 +309,21 @@ class Scene:
 
     def update(self):
         """ 推进一个时间步长，更新行人们的位置"""
+        #start_time = time.clock()
         for ped in self.peds:
             ped.compute_next(scene=self)
         for ped in self.peds:
             ped.update_status()
+        #end = time.clock()
+        #self.time_sum += (end - start_time)
+        #self.count += 1
+        #if self.count == 500:
+        #    print("average update time:%.6f" % (self.time_sum / self.count))
+        #    self.time_sum = 0
+        #    self.count = 0
+
+        #print("all peds Time:%.6f" % (end - start_time))
+
 
     def save(self, path):
         """ 保存场景到路径path"""

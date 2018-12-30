@@ -3,7 +3,8 @@
 
 from GuiModel.Gui import SfmGui
 from SFM.Scenes import *
-import SFM.PathFinder
+import SFM.QuickPathFinder
+
 
 if __name__ == '__main__':
     '''
@@ -13,7 +14,7 @@ if __name__ == '__main__':
     '''
     scene = get_scene2(10)  # 横向障碍物，参数是人数
     # scene = get_scene3(15)  # 纵向障碍物
-    SFM.PathFinder.path_finder_init(scene)
+    SFM.QuickPathFinder.path_finder_init(scene)
     g_gui = SfmGui(scene, 10000)
 
     g_gui.root.mainloop()

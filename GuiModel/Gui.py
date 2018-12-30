@@ -71,8 +71,11 @@ class SfmGui:
         self.th = None
 
     def begin_simulate(self):
+        steps_per_frame = 12
+        steps_cnt = 0
         while not self.scene.all_peds_arrived():
             # time.sleep(TIME_STEP)
+            steps_cnt += 1
             self.timeNow = self.timeNow + TIME_STEP
             self.timeNowStr.set("%.4f" % self.timeNow)
             try:
@@ -80,7 +83,9 @@ class SfmGui:
             except IndexError:
                 print("IndexError\n\n")
                 exit(0)
-            # print(gui.scene.peds)
+            if steps_cnt < steps_per_frame:
+                continue
+            steps_cnt = 0
             i = 0
             for ped in self.peds:
                 x = ped[0].pos.get_x()
@@ -93,8 +98,7 @@ class SfmGui:
                     pre_y = self.pre_peds[i][0].pos.get_y()
                     self.canvas.create_line(x, y, pre_x, pre_y, fill=self.get_color(i + 10))
                 i += 1
-
-            self.pre_peds = copy.deepcopy(self.peds)
+            #self.pre_peds = copy.deepcopy(self.peds)
 
     def begin_simulate_btn(self, event):
         if self.th and self.th.isAlive():
