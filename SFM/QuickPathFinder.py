@@ -2,6 +2,7 @@ import SFM.BasicClasses
 import math
 import ctypes
 import time
+import platform
 
 class Node:
     def __init__(self, box, x, y, id):
@@ -30,7 +31,13 @@ class JPSPathFinder:
         self.build_nodes()
         self.node_list = [self.nodes[i][j] for i in range(len(self.nodes)) for j in range(len(self.nodes[0]))]
         self.build_grid()
-        libpathfinder = ctypes.CDLL('lib\libpathfinder.dll')
+        if platform.system() == 'Windows':
+            libpathfinder = ctypes.CDLL('lib\libpathfinder.dll')
+        elif platform.system() == 'Linux':
+            libpathfinder = ctypes.CDLL('lib/libpathfinder.so')
+        else:
+            print('Unsupported platform')
+            exit(-1)
         self.direction = libpathfinder.get_direction
 
     def build_nodes(self):
@@ -103,10 +110,5 @@ def get_direction(scene, source):
 
     ex = ctypes.c_double(0.0)
     ey = ctypes.c_double(0.0)
-    start_time = time.clock()
     qpf.direction(qpf.grid, len(qpf.nodes), len(qpf.nodes[0]), start.x, start.y, goal.x, goal.y, ctypes.byref(ex), ctypes.byref(ey))
-    end = time.clock()
-    #print("Time:%.6f" % (end - start_time))
-    #print(ex.value)
-    #print(ey.value)
     return SFM.BasicClasses.Vector2D(ex.value, ey.value)

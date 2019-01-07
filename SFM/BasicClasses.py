@@ -83,6 +83,24 @@ class Vector2D:
     def set_y(self, y):
         self.y = y / Scene.scale_factor
 
+    def get_rotate_angle(self):
+        """计算这个向量逆时针旋转到(1, 0)的角度，[-pi, pi)
+            cosθ=a·b/(|a||b|)
+            sinθ=axb/(|a||b|), b = (1, 0)
+        """
+        angle = math.acos(self.x / self.norm())
+        if self.y >= 0:
+            angle = -angle
+        return angle
+
+    def rotate(self, angle):
+        if self.x == 0 or self.y == 0:
+            return Vector2D(self.x, self.y)
+        else:
+            l = self.norm()
+            t = math.atan2(self.y, self.x) + angle
+            return Vector2D(l * math.cos(t), l * math.sin(t))
+
 
 class Circle:
     """ Circle表示行人
@@ -191,20 +209,9 @@ class Circle:
 
     def get_force(self):
         """ 计算合力"""
-        #start_time = time.clock()
         f1 = self.ped_repulsive_force()
-        #end = time.clock()
-        #print("ped Time:%.6f" % (end - start_time))
-
-        #start_time = time.clock()
         f2 = self.wall_repulsive_force()
-        #end = time.clock()
-        #print("wall Time:%.6f" % (end - start_time))
-
-        #start_time = time.clock()
         f3 = self.desired_force()
-        #end = time.clock()
-        #print("desired Time:%.6f" % (end - start_time))
         if path_finder_test:
             return f3
         return f1 + f2 + f3
@@ -214,10 +221,7 @@ class Circle:
         """ 根据合力和质量计算加速度
         :return: 加速度
         """
-        #start_time = time.clock()
         acc = self.get_force() / self.mass
-        #end = time.clock()
-        #print("force Time:%.6f" % (end - start_time))
         if acc.norm() > 10:
             acc = acc / acc.norm() * 10
         return acc
@@ -309,20 +313,10 @@ class Scene:
 
     def update(self):
         """ 推进一个时间步长，更新行人们的位置"""
-        #start_time = time.clock()
         for ped in self.peds:
             ped.compute_next(scene=self)
         for ped in self.peds:
             ped.update_status()
-        #end = time.clock()
-        #self.time_sum += (end - start_time)
-        #self.count += 1
-        #if self.count == 500:
-        #    print("average update time:%.6f" % (self.time_sum / self.count))
-        #    self.time_sum = 0
-        #    self.count = 0
-
-        #print("all peds Time:%.6f" % (end - start_time))
 
 
     def save(self, path):
