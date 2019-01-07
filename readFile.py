@@ -9,18 +9,17 @@ class ReadData:
         self.persons = None
         self.per_num = 0
         self.speed_list = None
-        self.remove_tuple = (1000000000.0, 1000000000.0)
 
     def get_para(self, person_index, time_index):
         """
         获取某个人某个时刻的坐标
         :param person_index: 想要获取坐标的人的标号
         :param time_index: 想要获取坐标的时间序号，从0开始
-        :return: 返回的坐标，若人已到达出口则将返回值设置为self.remove_tuple
+        :return: 返回的坐标，若人已到达出口则将返回值设置为人最后的坐标
         """
         length = len(self.persons[person_index])
         if time_index >= length:
-            return self.remove_tuple
+            return self.persons[person_index][length-1]
         return self.persons[person_index][time_index]
 
     def get_speed(self, person_index, time_index):
